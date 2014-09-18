@@ -1,7 +1,4 @@
-source "https://supermarket.getchef.com"
+source :opscode
 
-cookbook "nginx"
-cookbook "nodejs"
-cookbook "git"
+cookbook "ripple_gateway", path: "./cookbooks/ripple_gateway"
 
-metadata

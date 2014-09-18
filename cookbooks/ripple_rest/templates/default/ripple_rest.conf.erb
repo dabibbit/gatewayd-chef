@@ -1,0 +1,15 @@
+description "ripple_rest"
+author "Steven Zeiler <zeiler.steven@gmail.com>"
+
+start on (local-filesystems and net-device-up IFACE=eth0)
+stop on shutdown
+
+respawn
+respawn limit 99 5
+
+script
+  export HOME="/home/ubuntu"
+
+  cd /opt/ripple-rest
+  exec /usr/bin/node server.js >> /var/www/ripple_gateway/current/node.log 2>&1
+end script

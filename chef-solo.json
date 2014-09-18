@@ -1,0 +1,12 @@
+{
+  "run_list": [
+    "recipe[git]",
+    "recipe[nodejs]",
+    "recipe[nginx]",
+    "recipe[apt]",
+    "recipe[postgres]",
+    "recipe[upstart]",
+    "recipe[ripple_rest]",
+    "recipe[ripple_gateway]"
+  ],
+}
