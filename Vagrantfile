@@ -36,19 +36,18 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # path, and data_bags path (all relative to this Vagrantfile), and adding
   # some recipes and/or roles.
   #
-  config.vm.provision "shell", inline: "echo Hello, World"
-
   config.vm.provision "chef_solo" do |chef|
-    chef.cookbooks_path = "/Users/stevenzeiler/github/gatewayd/gatewayd-chef/cookbooks"
     #chef.roles_path = "../my-recipes/roles"
     #chef.data_bags_path = "../my-recipes/data_bags"
+
+    chef.cookbooks_path = "/Users/stevenzeiler/github/gatewayd/gatewayd-chef/cookbooks"
     chef.add_recipe "nginx"
     chef.add_recipe "nodejs"
+
     #chef.add_role "web"
- 
     # You may also specify custom JSON attributes:
     chef.json = {
-      domain: "onemilliongateways.com"
+      domain: "gatewayd.org"
     }
   end
 end
