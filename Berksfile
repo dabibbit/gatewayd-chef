@@ -1,5 +1,8 @@
 site :opscode
 
-#cookbook "ripple_gateway", path: "./cookbooks/ripple_gateway"
+cookbook "nginx"
+cookbook "database"
 cookbook "git"
+
+#cookbook "gatewayd", path: "./cookbooks/gatewayd"
 
