@@ -1,0 +1,134 @@
+# If you wish the Daemon to be lauched at boot / stopped at shutdown:
+# INSTALL : update-rc.d gatewayd defaults
+# UNINSTALL : update-rc.d -f gatewayd remove
+
+### BEGIN INIT INFO
+# Provides:          gatewayd
+# Required-Start:    $remote_fs $named $syslog rippled
+# Required-Stop:     $remote_fs $named $syslog rippled
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: RESTful API server for rippled.
+# Description:       RESTful API server for rippled.
+### END INIT INFO
+
+# Author: Bryce A. Lynch (bryce at ripple dot com)
+# PGP: 0xA4364248 / A177 A590 2869 32AC E2E1  946A FAD8 98D6 A436 4248
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
+NAME=gatewayd
+DAEMON="processes/server.js"
+DAEMON_DIR="/home/ubuntu/gatewayd"
+DESC="node.js server that facilitates running a Ripple gateway."
+NODEUSER="ubuntu"
+PIDFILE="/var/run/$NAME.pid"
+ERROR="/var/log/$NAME.err"
+LOG="/var/log/$NAME.log"
+
+# Needed to make PM2 happy.
+export HOME=/tmp/gatewayd
+mkdir -p $HOME
+
+# The app requires that the IP address it listens on be set with an environment
+# variable and not in a configuration file or on the command line.  The app
+# defaults to 0.0.0.0.
+#export ADDRESS=127.0.0.1
+
+# The app defaults to port 5990/tcp but supports being told to listen on
+# another port with an environment variable.
+#export PORT=5990
+
+# The database URL has to be set up for the server to start successfully
+#export DATABASE_URL="postgres://appliance:81375timtom^^TACTICAL()SERI@localhost:5432/gateway_appliance"
+
+# Do NOT put "set -e" here!
+
+# ABEND if pm2 is not installed.
+if [ ! -x /usr/bin/pm2 ]; then
+    echo "PM2 not installed." >&2
+    exit 1
+fi
+
+# Read configuration variable file if one exists.  Note that this can
+# potentially change the values of variables defined earlier in this script.
+[ -r /etc/default/$INIT_SCRIPT_NAME ] && . /etc/default/$INIT_SCRIPT_NAME
+
+# Load the other rcS variables.
+. /lib/init/vars.sh
+
+# Pull in the LSB log_* functions, chief among them log_daemon_msg(), which is
+# used to print stuff to the screen.
+. /lib/lsb/init-functions
+
+# Core code.
+case "$1" in
+    start)
+        echo "Starting Gatewayd API server... "
+        cd $DAEMON_DIR
+        pm2 start -o $LOG -e $ERROR -p $PIDFILE -u $NODEUSER --cron "0 * * * *" --name "$NAME" \
+            $DAEMON
+        ;;
+
+    stop)
+        echo "Stopping Gatewayd API server... "
+        cd $DAEMON_DIR
+        pm2 stop $NAME
+        ;;
+
+    restart)
+        echo "Restarting $NAME..."
+        cd $DAEMON_DIR
+        pm2 restart $NAME
+        ;;
+
+    upgrade)
+        if [ `id -u` -gt 0 ]; then
+            echo "You must be root to update the $NAME codebase. ABENDing."
+            exit 1
+        fi
+
+        echo "Updating $NAME to latest version. Press enter to continue or ^C to abort."
+        read pause
+
+        # Trap a couple of signals to keep things from getting messed up.
+        trap '' 2 # SIGINT
+        trap '' 9 # SIGKILL
+        trap '' 20 # SIGTSTP
+
+        echo "Stopping $NAME."
+        umask 0022
+        cd $DAEMON_DIR
+        pm2 stop $NAME
+
+        echo "Updating code repository."
+        git pull
+
+        echo "Updating NPM modules."
+        npm install
+
+        echo "Updating database schemas."
+        /opt/gatewayd/node_modules/.bin/grunt
+        
+        echo "Starting $NAME."
+        pm2 start -o $LOG -e $ERROR -p $PIDFILE -u $NODEUSER --name "$NAME" \
+            $DAEMON
+
+        # Re-enable trapped signals.
+        trap 2
+        trap 9
+        trap 20
+        ;;
+
+    status)
+        pm2 list
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status|upgrade}" >&2
+        exit 3
+        ;;
+esac
+
+# Fin.
+exit 0
+
+

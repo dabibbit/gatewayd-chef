@@ -1,15 +1,23 @@
-
-git "/opt/ripple-rest" do
-  repository "https://github.com/ripple/ripple-rest"
-  revision "develop"
+i# Setup repository for non-capistrano
+git "/home/ubuntu/gatewayd" do
+  repository "https://github.com/ripple/gatewayd"
+  revision "master"
   action :sync
 end
 
-execute "cd /opt/ripple-rest && sudo npm install"
-
-template "/etc/init/ripple_rest.conf" do
-  source "ripple_rest.conf.erb"
+# Setup deploy directory for Capistrano
+directory "/opt/gatewayd" do
+  owner "ubuntu"
+  action :create
+end
+directory "/tmp/gatewayd" do
+  owner "ubuntu"
   action :create
 end
 
-execute "sudo start ripple_rest"
+# Start gatewayd on startup
+template "/etc/init.d/gatewayd" do
+  source "init.d/gatewayd.erb"
+  action :create
+end
+
